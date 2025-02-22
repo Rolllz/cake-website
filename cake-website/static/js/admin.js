@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
-    const ordersBody = document.getElementById('orders-body');
+    const role = localStorage.getItem('role');
+    const ordersBody = document.querySelector('#orders-table tbody');
     const error = document.getElementById('error');
     const logoutBtn = document.getElementById('logout-btn');
 
-    if (!token) {
-        window.location.href = 'login.html';
+    if (!token || role !== 'admin') {
+        window.location.href = '/templates/login.html';
         return;
     }
 
@@ -40,13 +41,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             error.style.display = 'block';
         }
     } catch (err) {
-        error.textContent = 'Ошибка сети';
+        error.textContent = `Ошибка: ${err.message}`;
         error.style.display = 'block';
+        console.error(err);
     }
 
-    // Выход
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('token');
-        window.location.href = 'index.html';
+        localStorage.removeItem('role');
+        window.location.href = '/templates/index.html';
     });
 });

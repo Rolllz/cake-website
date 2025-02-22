@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
+        if (password.length < 6) {
+            showMessage('Пароль должен быть не менее 6 символов.', 'error');
+            return;
+        }
 
         try {
             const response = await fetch('http://localhost:8000/register', {
@@ -23,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                window.location.href = 'login.html'; // Просто переход, без сообщения
+                window.location.href = '/templates/login.html'; // Просто переход, без сообщения
             } else {
                 const data = await response.json();
                 showMessage(data.detail || 'Ошибка при регистрации', 'error');

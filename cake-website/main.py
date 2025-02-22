@@ -2,24 +2,37 @@ from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 import asyncpg
 import re
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer
+from contextlib import asynccontextmanager
+from pathlib import Path
+import uvicorn
 
-app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+
+# Функция для управления жизненным циклом
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    await app.state.db_pool.close()
+
+# Определяем приложение один раз с lifespan
+app = FastAPI(lifespan=lifespan)
 
 # Подключение статических файлов
-app.mount("/", StaticFiles(directory="templates"), name="templates")  # Монтируем templates в корень
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000"],  # Убрали 5500, так как используем только 8000
+    allow_origins=["http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,7 +75,7 @@ def validate_phone(phone: str) -> bool:
     phone_pattern = r"^(?:\+7|8)\s?\(?\d{3}\)?\s?\d{3}-?\d{2}-?\d{2}$|^\d{10,11}$"
     return bool(re.match(phone_pattern, phone))
 
-# Проверка токена
+# Проверка токена и получение роли
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=401,
@@ -74,9 +87,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
+        async with app.state.db_pool.acquire() as conn:
+            user = await conn.fetchrow("SELECT username, role FROM users WHERE username = $1", username)
+            if not user:
+                raise credentials_exception
+        return {"username": user["username"], "role": user["role"]}
     except JWTError:
         raise credentials_exception
-    return username
 
 # Подключение к базе данных
 async def init_db():
@@ -103,25 +120,18 @@ async def init_db():
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
                     username TEXT UNIQUE NOT NULL,
-                    hashed_password TEXT NOT NULL
+                    hashed_password TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'user'
                 );
             ''')
         print("Подключение к базе данных успешно!")
     except Exception as e:
         print(f"Ошибка подключения к базе данных: {e}")
 
-@app.on_event("startup")
-async def startup():
-    await init_db()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await app.state.db_pool.close()
-
 # Главная страница
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/index.html")
+    return RedirectResponse(url="/templates/index.html")
 
 # Регистрация пользователя
 @app.post("/register")
@@ -133,15 +143,15 @@ async def register(user: User):
         
         hashed_password = pwd_context.hash(user.password)
         await conn.execute(
-            "INSERT INTO users (username, hashed_password) VALUES ($1, $2)",
-            user.username, hashed_password
+            "INSERT INTO users (username, hashed_password, role) VALUES ($1, $2, $3)",
+            user.username, hashed_password, "user"
         )
     return {"message": "Пользователь успешно зарегистрирован"}
 
 # Создание JWT токена
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta  # Исправляем на now(timezone.utc)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -156,11 +166,11 @@ async def login(user: User):
         
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer", "role": db_user["role"]}
 
 # Эндпоинт для создания заказа
 @app.post("/order")
-async def create_order(order: Order):
+async def create_order(order: Order, current_user: dict = Depends(get_current_user)):
     if not validate_phone(order.phone):
         raise HTTPException(status_code=400, detail="Некорректный номер телефона. Используйте формат +7 (XXX) XXX-XX-XX или 10-11 цифр.")
     
@@ -180,7 +190,7 @@ async def create_order(order: Order):
 
 # Эндпоинт для получения заказов (только для авторизованных)
 @app.get("/orders")
-async def get_orders(current_user: str = Depends(get_current_user)):
+async def get_orders(current_user: dict = Depends(get_current_user)):
     try:
         async with app.state.db_pool.acquire() as conn:
             orders = await conn.fetch("SELECT * FROM orders ORDER BY created_at DESC")
@@ -188,6 +198,12 @@ async def get_orders(current_user: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при получении заказов: {str(e)}")
 
+# Админ-панель с проверкой роли
+@app.get("/templates/admin.html")
+async def admin_page(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
+    return FileResponse(BASE_DIR / "templates" / "admin.html")
+
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

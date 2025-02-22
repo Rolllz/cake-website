@@ -43,6 +43,7 @@ nav #logout-btn {
     background: url('../img/cake-bg.jpg') no-repeat center;
     background-size: cover;
     color: white;
+    background-color: #ffcccc; /* Запасной цвет, если изображение не загрузится */
 }
 .hero h2 {
     font-size: 36px;
@@ -65,6 +66,12 @@ nav #logout-btn {
     justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+    .gallery img {
+        width: 100px;
+        height: 100px;
+    }
 }
 .gallery img {
     width: 200px;
