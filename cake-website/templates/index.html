@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анастасия Разепова - Торты на заказ</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <header>
+        <h1>Анастасия Разепова</h1>
+    </header>
+    <nav>
+        <a href="#home">Главная</a>
+        <a href="#about">О себе</a>
+        <a href="#portfolio">Портфолио</a>
+        <a href="#services">Услуги</a>
+        <a href="#contacts">Контакты</a>
+        <a href="/admin.html" id="admin-link" style="display: none;">Админ-панель</a>
+        <a href="/login.html" id="login-link">Вход</a>
+        <button id="logout-btn">Выйти</button>
+    </nav>
+
+    <div class="hero" id="home">
+        <h2>Ваши сладкие мечты станут реальностью!</h2>
+        <button>Заказать торт</button>
+    </div>
+
+    <div class="section" id="about">
+        <h2>О себе</h2>
+        <p>Меня зовут Анастасия Разепова, и я создаю уникальные десерты уже более 5 лет. Моя страсть — это торты, которые радуют глаз и душу. Использую только натуральные ингредиенты!</p>
+    </div>
+
+    <div class="section" id="portfolio">
+        <h2>Портфолио</h2>
+        <div class="gallery">
+            <img src="/static/img/cake1.jpg" alt="Торт 1">
+            <img src="/static/img/cake2.jpg" alt="Торт 2">
+            <img src="/static/img/cake3.jpg" alt="Торт 3">
+        </div>
+    </div>
+
+    <div class="section" id="services">
+        <h2>Услуги и цены</h2>
+        <p>Торты на заказ от 1500 руб/кг<br>Капкейки от 200 руб/шт<br>Доставка по городу — 300 руб</p>
+        <div class="catalog-form">
+            <h3>Оформить заказ</h3>
+            <div id="message-container" class="message-container"></div>
+            <form id="order-form">
+                <label for="product">Выберите десерт:</label>
+                <select id="product" name="product">
+                    <option value="cake" data-price="1500">Торт (1500 руб/кг)</option>
+                    <option value="cupcake" data-price="200">Капкейки (200 руб/шт)</option>
+                    <option value="macaron" data-price="150">Макаронс (150 руб/шт)</option>
+                </select>
+
+                <label for="quantity">Количество:</label>
+                <input type="number" id="quantity" name="quantity" min="1" placeholder="Укажите количество" required>
+
+                <label for="details">Детали заказа:</label>
+                <textarea id="details" name="details" rows="4" placeholder="Например, вкус, украшения, дата доставки"></textarea>
+
+                <label for="name">Ваше имя:</label>
+                <input type="text" id="name" name="name" placeholder="Введите имя" required>
+
+                <label for="phone">Телефон:</label>
+                <input type="tel" id="phone" name="phone" placeholder="+7 (XXX) XXX-XX-XX" required>
+                <div id="phone-error" class="error">Пожалуйста, введите корректный номер телефона (например, +7 (XXX) XXX-XX-XX)</div>
+
+                <div id="total-cost">Общая стоимость: 0 руб</div>
+
+                <button type="submit">Отправить заказ</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="section" id="contacts">
+        <h2>Контакты</h2>
+        <p>Телефон: +7 (961) 378-80-56<br>Email: <a href="mailto:nastyusha.0@mail.ru">nastyusha.0@mail.ru</a><br>Instagram: <a href="https://instagram.com/mondssert" target="_blank">@mondssert</a></p>
+    </div>
+
+    <footer>
+        <p>© 2025 Анастасия Разепова. Все права защищены.</p>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

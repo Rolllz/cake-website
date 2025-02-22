@@ -1,0 +1,22 @@
+cake-website/
+├── static/
+│   ├── css/
+│   │   ├── main.css
+│   │   ├── auth.css
+│   │   ├── admin.css    # Новый файл для стилей админ-панели
+│   ├── js/
+│   │   ├── script.js
+│   │   ├── register.js
+│   │   ├── login.js
+│   │   ├── admin.js     # Новый файл для логики админ-панели
+│   ├── img/
+│   │   ├── cake-bg.jpg
+│   │   ├── cake1.jpg
+│   │   ├── cake2.jpg
+│   │   └── cake3.jpg
+├── templates/
+│   ├── index.html
+│   ├── register.html
+│   ├── login.html
+│   ├── admin.html       # Новая страница админ-панели
+├── main.py
